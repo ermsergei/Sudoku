@@ -1,14 +1,19 @@
-
+//Sudoku12
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.Date;
 
 public class Sudoku {
 
     static int size = 3;
 
     public static void main(String[] args) throws IOException {
+        Date date = new Date();
+        long start, end;
+        start = System.currentTimeMillis();
+
         System.out.println("Start read InPut file!");
 
         Matrix matrix = new Matrix();
@@ -33,7 +38,7 @@ public class Sudoku {
             if (src.hasNextInt()) {
                 val = src.nextInt();
                 column++;
-                if (column >= size * size) {
+                if (column >= size*size) {
                     //   System.out.println();
                     line++;
                     column = 0;
@@ -46,14 +51,19 @@ public class Sudoku {
         }
 
         fin.close();
+
         // matrix.Display("Matrix before solve", 1);
-        if (matrix.SolveAll(0) == 0) {
+        System.out.println("Wait for a moment!!");
+        if (matrix.SolveAll() == 0) {
             System.out.println("Success!!");
             matrix.Display("Solution:", 1);
             matrix.CheckFinalMatrix();
         } else {
             System.out.println("There is no solution for this Matrix");
         }
+        end = System.currentTimeMillis();
+        System.out.println("Time of execution is: " + 0.001 * (end - start) + " sec");
+        System.out.println(date.toString());
 
     }
 }
@@ -67,9 +77,9 @@ class Cell {
 
     Cell() {
         value = 0;  //init of value in the Cell using an object cells
-        NumberOfPossVal = size * size;
-        possibleValues = new int[size * size];
-        for (int ii = 0; ii < size * size; ii++) {
+        NumberOfPossVal = size*size;
+        possibleValues = new int[size*size];
+        for (int ii = 0; ii < size*size; ii++) {
             possibleValues[ii] = ii + 1;
         }
     }
@@ -78,23 +88,26 @@ class Cell {
 class Matrix {
 
     int size = Sudoku.size;
-    Cell[][] cells = new Cell[size * size][size * size];
+    Cell[][] cells = new Cell[size*size][size*size];
 
     Matrix() {
         InitMatrix();
     }
 
+//Copy constructor gets object &from (workingCopy)
     Matrix(Matrix from) {
-        InitMatrix(); 
+        //  System.out.println("Copy constructor called");
+        InitMatrix();
         copyMatrix(from);
     }
+
     private int copyMatrix(Matrix workingCopy) {
         int line, column, ii;
 
-        for (line = 0; line < size * size; ++line) {
-            for (column = 0; column < size * size; ++column) {
+        for (line = 0; line < size*size; ++line) {
+            for (column = 0; column < size*size; ++column) {
                 if (workingCopy.cells[line][column].NumberOfPossVal > 0) {
-                    for (ii = 0; ii < size * size; ++ii) {
+                    for (ii = 0; ii < size*size; ++ii) {
                         cells[line][column].possibleValues[ii] = workingCopy.cells[line][column].possibleValues[ii];
                     }
                 }
@@ -107,8 +120,8 @@ class Matrix {
 
     private void InitMatrix() {
         int line, column;
-        for (line = 0; line < size * size; ++line) {
-            for (column = 0; column < size * size; ++column) {
+        for (line = 0; line < size*size; ++line) {
+            for (column = 0; column < size*size; ++column) {
                 cells[line][column] = new Cell();         //Making new Cell to reset the Cell of the Matrix
             }
         }
@@ -131,14 +144,14 @@ class Matrix {
     int UpdatePosValues(int line, int column, int value) {
         int ii, jj;
         // Update for the line
-        for (ii = 0; ii < size * size; ++ii) {
+        for (ii = 0; ii < size*size; ++ii) {
             if (UpdatePossValuesForCell(line, ii, value) < 0) {
                 return -1;
             }
         }
 
         // For the column
-        for (jj = 0; jj < size * size; ++jj) {
+        for (jj = 0; jj < size*size; ++jj) {
             if (UpdatePossValuesForCell(jj, column, value) < 0) {
                 return -1;
             }
@@ -153,7 +166,7 @@ class Matrix {
 
         for (ii = 0; ii < size; ++ii) {
             for (jj = 0; jj < size; ++jj) {
-                if (UpdatePossValuesForCell(top * size + ii, left * size + jj, value) < 0) {
+                if (UpdatePossValuesForCell(top*size + ii, left*size + jj, value) < 0) {
                     return -1;
                 }
             }
@@ -183,23 +196,21 @@ class Matrix {
     //Function is searching cells which have only one NumberOfPosVal, then calls SetValue() &
     //set this value
     int Solve() {
-        System.out.println();
-        System.out.print(" Solve starts");
+        //System.out.println();
+        //System.out.print(" Solve starts");
         int ret = 0;
         int ii, jj;
-        System.out.println();
+        // System.out.println();
 
-        for (ii = 0; ii < size * size; ++ii) {
-            for (jj = 0; jj < size * size; ++jj) {
+        for (ii = 0; ii < size*size; ++ii) {
+            for (jj = 0; jj < size*size; ++jj) {
                 if (cells[ii][jj].value != 0) // System.out.println("Value " + cells[ii][jj].value);
-                {
                     continue;
-                }
                 //  System.out.println("NumberOfPossVal [" + ii + "][" + jj + "]" + cells[ii][jj].NumberOfPossVal + " Value " + cells[ii][jj].value);
                 if (cells[ii][jj].NumberOfPossVal == 1) {
                     // System.out.println("Cell has only one possible value - resolve " + ii + jj);
                     int kk;
-                    for (kk = 0; kk < size * size; ++kk) {
+                    for (kk = 0; kk < size*size; ++kk) {
                         if (cells[ii][jj].possibleValues[kk] != 0) {
                             if (SetValue(ii, jj, kk + 1) < 0) {
                                 return -1;
@@ -211,10 +222,10 @@ class Matrix {
                 }
             }
         }
-        if (ret == 0) {
-            DisplayPoss("After Solve");
-        }
-        System.out.println(" Solve returns " + ret);
+        /*
+         * if (ret == 0) { DisplayPoss("After Solve"); } System.out.println("
+         * Solve returns " + ret);
+         */
         return ret;
     }
     /*
@@ -224,19 +235,19 @@ class Matrix {
      */
 
     int Solve1() {
-        System.out.println();
-        System.out.print(" Solve1 starts");
+        //System.out.println();
+        //System.out.print(" Solve1 starts");
         int ret = 0;
         int line;
         int column;
 
         // Scan lines
-        for (line = 0; line < size * size; line++) {
+        for (line = 0; line < size*size; line++) {
             int value;
-            for (value = 1; value <= size * size; ++value) {
+            for (value = 1; value <= size*size; ++value) {
                 int whatColumn = -1;
 
-                for (column = 0; column < size * size; ++column) {
+                for (column = 0; column < size*size; ++column) {
                     if (cells[line][column].value != 0) {
                         continue;
                     }
@@ -264,10 +275,10 @@ class Matrix {
                 }
             }
         }
-        if (ret == 0) {
-            DisplayPoss("After Solve1");
-        }
-        System.out.println(" Solve1 returns " + ret);
+        /*
+         * if (ret == 0) { DisplayPoss("After Solve1"); } System.out.println("
+         * Solve1 returns " + ret);
+         */
         return ret;
     }
     /*
@@ -277,15 +288,15 @@ class Matrix {
      */
 
     int Solve2() {
-        System.out.println("Solve2 starts");
+        //System.out.println("Solve2 starts");
         int ret = 0;
         int line, column;
-        for (column = 0; column < size * size; column++) {
+        for (column = 0; column < size*size; column++) {
             int value;
-            for (value = 1; value <= size * size; ++value) {
+            for (value = 1; value <= size*size; ++value) {
                 int whatLine = -1;
 
-                for (line = 0; line < size * size; ++line) {
+                for (line = 0; line < size*size; ++line) {
                     if (cells[line][column].value != 0) {
                         continue;
                     }
@@ -313,11 +324,10 @@ class Matrix {
                 }
             }
         }
-        if (ret != 0) {
-            DisplayPoss("After Solve2");
-        }
-        System.out.println();
-        System.out.println(" Solve2 returns " + ret);
+        /*
+         * if (ret == 0) { DisplayPoss("After Solve2"); } System.out.println();
+         * System.out.println(" Solve2 returns " + ret);
+         */
         return ret;
     }
 
@@ -327,7 +337,7 @@ class Matrix {
      * removed and after SetValue() will set this value into the cell
      */
     int Solve3() {
-        System.out.println("Solve3 starts");
+//        System.out.println("Solve3 starts");
         int ret = 0;
         int li, ci;
         for (li = 0; li < size; li++) {
@@ -371,11 +381,10 @@ class Matrix {
 
             }
         }
-        if (ret != 0) {
-            DisplayPoss("After Solve3");
-        }
-        System.out.println();
-        System.out.println(" Solve3 returns " + ret);
+        /*
+         * if (ret == 0) { DisplayPoss("After Solve3"); } System.out.println();
+         * System.out.println(" Solve3 returns " + ret);
+         */
         return ret;
     }
     /*
@@ -384,7 +393,7 @@ class Matrix {
      */
 
     int Solve4() {
-        System.out.println("Solve4 starts");
+//        System.out.println("Solve4 starts");
         int line;
         int column;
         int ret = 0;
@@ -392,15 +401,15 @@ class Matrix {
         // printf("Function Solve4\n");
         // Try to find pairs. For every cell with 2 possible values scan
         // line, column and quad
-        for (line = 0; line < size * size; ++line) {
-            for (column = 0; column < size * size; ++column) {
+        for (line = 0; line < size*size; ++line) {
+            for (column = 0; column < size*size; ++column) {
                 if (cells[line][column].NumberOfPossVal == 2) {
 
                     // Scan the line
-                    ret += FindRegion(line, column, line, 0, line + 1, size * size);
+                    ret += FindRegion(line, column, line, 0, line + 1, size*size);
 
                     // Scan the column
-                    ret += FindRegion(line, column, 0, column, size * size, column + 1);
+                    ret += FindRegion(line, column, 0, column, size*size, column + 1);
 
                     // Scan the quad
                     int top, left, bottom, right;
@@ -412,9 +421,9 @@ class Matrix {
                 }
             }
         }
-
-        System.out.println();
-        System.out.println(" Solve4 returns " + ret);
+        /*
+         * System.out.println(); System.out.println(" Solve4 returns " + ret);
+         */
         return ret;
     }
 //***************************************************************
@@ -440,7 +449,7 @@ class Matrix {
 
                 // Does the cell have the same posvals?
                 boolean theSame = true;
-                for (ii = 0; ii < size; ii++) {
+                for (ii = 0; ii < size*size; ii++) {
                     if ((cells[li][cl].possibleValues[ii])
                             != (cells[line][column].possibleValues[ii])) {
                         theSame = false;
@@ -488,7 +497,7 @@ class Matrix {
                 }
 
                 // If this cell has one of the pair values - remove it
-                for (ii = 0; ii < size * size; ++ii) {
+                for (ii = 0; ii < size*size; ++ii) {
                     if (cells[line][column].possibleValues[ii] == 0) {
                         continue;
                     }
@@ -504,18 +513,24 @@ class Matrix {
         return ret;
     }
 
-    int SolveAll(int level) {
+    int SolveAll() {
         int line, column;
         int n;
         int ret = 0;
-        /*
-          while ((n = Solve()) != 0 || (n = Solve1()) != 0 || (n = Solve2()) !=
-          0 || (n = Solve3()) != 0 || (n = Solve4()) != 0); { if (n < 0) {
-          return -1; } }
-         */
-         
-        for (line = 0; line < size; ++line) {
-            for (column = 0; column < size; ++column) {
+        while ((n = Solve()) != 0  ||
+               (n = Solve1()) != 0 ||
+               (n = Solve2()) != 0 ||
+               (n = Solve3()) != 0 ||
+               (n = Solve4()) != 0)
+
+        {
+            if (n < 0) {
+                return -1;
+            }
+        }
+
+        for (line = 0; line < size*size; ++line) {
+            for (column = 0; column < size*size; ++column) {
                 // We should skip the cells where the value is already set
                 if (cells[line][column].value != 0) {
                     continue;
@@ -524,20 +539,19 @@ class Matrix {
                 ret++;
 
                 int ii;
-                for (ii = 0; ii < size; ii++) {
+                for (ii = 0; ii < size*size; ii++) {
 
                     if (cells[line][column].possibleValues[ii] == 0) {
                         continue;
                     }
                     Matrix workingCopy = new Matrix(this);  // create new object workingCopy 
-                                                            // construcctor Matrix(Matrix from);
 
                     //Set value and try to solve..
                     if (workingCopy.SetValue(line, column, ii + 1) < 0) {
-                        System.out.println("Can't set " + ii + 1 + "to " + "[" + line + "][" + column + " Try another one");
+                        //   System.out.println("Can't set " + ii + 1 + "to " + "[" + line + "][" + column + " Try another one");
                         continue;
                     }
-                    if (workingCopy.SolveAll(level+1) == 0) // Solution is found
+                    if (workingCopy.SolveAll() == 0) // Solution is found
                     {
                         copyMatrix(workingCopy);
                         return 0;
@@ -625,7 +639,7 @@ class Matrix {
                 LineSum += cells[line][column].value;  // Sum values in the each line
             }
             if (LineSum != ((1 + size * size) * size * size) / 2) {
-                System.out.println("Error!! In Line: " + "[" + line + 1 + "]" + " LineSum: " + LineSum);
+                System.out.println("Error!! In Line: " + "[" + (line + 1) + "]" + " LineSum: " + LineSum);
             }
         }
         ////////////CheckColumn/////////////////////
@@ -635,7 +649,7 @@ class Matrix {
                 ColumnSum += cells[line][column].value;  // Sum values in the each column
             }
             if (ColumnSum != ((1 + size * size) * size * size) / 2) {
-                System.out.println("Error!! In Column: " + "[" + column + 1 + "]" + "ColumnSum: " + ColumnSum);
+                System.out.println("Error!! In Column: " + "[" + (column + 1) + "]" + " ColumnSum: " + ColumnSum);
             }
         }
         ////////////CheckQuadrant///////////////////
@@ -664,6 +678,3 @@ class Matrix {
         return 0;
     }
 }
-
-
-// Just a comment to check github
