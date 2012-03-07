@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.Date;
+import javax.crypto.Cipher;
 
 public class Sudoku {
 
@@ -15,6 +16,7 @@ public class Sudoku {
         start = System.currentTimeMillis();
 
         System.out.println("Start read InPut file!");
+
 
         Matrix matrix = new Matrix();
         FileReader fin;
@@ -37,6 +39,8 @@ public class Sudoku {
         while (src.hasNext()) {
             if (src.hasNextInt()) {
                 val = src.nextInt();
+
+
                 column++;
                 if (column >= size * size) {
                     //   System.out.println();
@@ -78,9 +82,15 @@ class Cell {
     Cell() {
         value = 0;  //init of value in the Cell using an object cells
         NumberOfPossVal = size * size;
-        possibleValues = new int[size * size];
-        for (int ii = 0; ii < size * size; ii++) {
-            possibleValues[ii] = ii + 1;
+        try {
+            possibleValues = new int[size * size];
+
+
+            for (int ii = 0; ii < size * size; ii++) {
+                possibleValues[ii] = ii + 1;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Out of Bound");
         }
     }
 }
@@ -128,16 +138,17 @@ class Matrix {
     }
 
     int SetValue(int line, int column, int value) {
-        // If the value is already set - error
-        cells[line][column].value = value;
-        //System.out.println("Value: "+ value);
-        //Update possible values for the row, column and quadrant
-        if (UpdatePosValues(line, column, value) < 0) {
-            return -1;
-        }
-        cells[line][column].NumberOfPossVal = 0;
-        return 0;
+        if (value != 0) {
 
+            cells[line][column].value = value;
+            cells[line][column].possibleValues[value - 1] = 0;
+
+            if (UpdatePosValues(line, column, value) < 0) {
+                return -1;
+            }
+            cells[line][column].NumberOfPossVal = 0;
+        }
+        return 0;
     }
 
     //Function Updates possible values for the row, column and quadrant
@@ -176,18 +187,23 @@ class Matrix {
     // Function updates possible values of the Cell
 
     int UpdatePossValuesForCell(int line, int column, int value) {
+        //if the value exists in line,column,quadr.., this value has tobe removed from 
+        //possibleValue[]
+        try {
+            if (cells[line][column].possibleValues[value - 1] != 0) {
+                cells[line][column].NumberOfPossVal--;
+                cells[line][column].possibleValues[value - 1] = 0;
 
-        if (cells[line][column].possibleValues[value - 1] != 0) {
-            cells[line][column].NumberOfPossVal--;
-            cells[line][column].possibleValues[value - 1] = 0;
-
-
-            // If we remove the last possible value for the cell - it's an error.
-            if (cells[line][column].NumberOfPossVal == 0 && cells[line][column].value == 0) {
-                return -1;
-            } else {
-                return 1;
+                // If we remove the last possible value for the cell - it's an error.
+                if (cells[line][column].NumberOfPossVal == 0 && cells[line][column].value == 0) {
+                    //   System.out.println("Error from Updata PossValueForCell "+line+" "+column);
+                    return -1;
+                } else {
+                    return 1;
+                }
             }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Out of Bounds");
         }
         return 0;
     }
@@ -196,11 +212,11 @@ class Matrix {
     //Function is searching cells which have only one NumberOfPosVal, then calls SetValue() &
     //set this value
     int Solve() {
-        //System.out.println();
-        //System.out.print(" Solve starts");
+        // System.out.println();
+        // System.out.print(" Solve starts");
         int ret = 0;
         int ii, jj;
-        // System.out.println();
+        //  System.out.println();
 
         for (ii = 0; ii < size * size; ++ii) {
             for (jj = 0; jj < size * size; ++jj) {
@@ -230,15 +246,14 @@ class Matrix {
          */
         return ret;
     }
+
     /*
      * Solve1()is looking for possibleValues, which appears in the line only
      * once, if sach value exists other possibleValues of the cell will be
      * removed and after SetValue() will set this value into the cell
      */
-
     int Solve1() {
-        //System.out.println();
-        //System.out.print(" Solve1 starts");
+        System.out.println(" Solve1 starts");
         int ret = 0;
         int line;
         int column;
@@ -253,6 +268,7 @@ class Matrix {
                         continue;
                     }
                     if (cells[line][column].possibleValues[value - 1] != 0) {//if PossibleValue exists
+                        //    System.out.println("PossVal: " + "[" + line + "][" + column + "] " + cells[line][column].possibleValues[value - 1]);
                         // check if the value appears in the line cells only once
                         if (whatColumn == -1) {
                             whatColumn = column;
@@ -267,17 +283,16 @@ class Matrix {
                     // if break : Nothing to do
                 } else {
                     // Value appears only once in cell [line][column]
-                    if (SetValue(line, whatColumn, value) < 0) {
-                        return -1;
-                    }
+                    SetValue(line, whatColumn, value);
+                    //   System.out.println("Line: " + line + " whatColumn: " + whatColumn + " value: " + value);
                     ret++;
                 }
             }
         }
-        /*
-         * if (ret == 0) { DisplayPoss("After Solve1"); } System.out.println("
-         * Solve1 returns " + ret);
-         */
+        if (ret == 0) {
+            DisplayPoss("After Solve1");
+        }
+        System.out.println("Solve1 returns " + ret);
         return ret;
     }
     /*
@@ -301,7 +316,7 @@ class Matrix {
                     }
 
                     if (cells[line][column].possibleValues[value - 1] != 0) {//check if if PossibleValue exists
-                         // check if the value appears in the column cells only once
+                        // check if the value appears in the column cells only once
                         if (whatLine == -1) {
                             whatLine = line;
                         } else {
@@ -324,10 +339,13 @@ class Matrix {
                 }
             }
         }
-        /*
-         * if (ret == 0) { DisplayPoss("After Solve2"); } System.out.println();
-         * System.out.println(" Solve2 returns " + ret);
-         */
+
+        if (ret != 0) {
+            DisplayPoss("After Solve2");
+        }
+        System.out.println();
+        System.out.println(" Solve2 returns " + ret);
+
         return ret;
     }
 
@@ -337,50 +355,57 @@ class Matrix {
      * removed and after SetValue() will set this value into the cell
      */
     int Solve3() {
+        System.out.println("Solve3 starts");
         int ret = 0;
-        int li, ci;// line and colomn of the quadrant
-
-        for (li = 0; li < size; li++) { // line  Loop for all sudoku by quadrant
-            for (ci = 0; ci < size; ci++) {// colomn Loop for all sudoku by quadrant
-                int line; // line for quadrant
-                int column = 0; // colonm for quadrant
-
-                for (line = 0; line < size; line++) {// loop inside quadrant by line
-                    if (cells[line][column].value != 0) { // We should skip the cells where the value is already set
-                        continue;
-                    }
-
-                    for (column = 0; column < size; column++) {// loop inside quadrant by colomn
-                        if (cells[line][column].value == 0) { // We should skip the cells where the value is already set
-                            continue;
-                        }
-
-                        int value;
-                        int whatLine = -1;    // fake value
-                        int whatColumn = 0;
-                        for (value = 1; value < size * size; value++) {
-                            if (cells[li + line][ci + column].possibleValues[value - 1] != 0) {
-                                // check if the value appears in the quadrant cells only once
-                                if (whatLine == -1) {
-                                    whatLine = line;
-                                    whatColumn = column;
-                                } else {  //if value appears second time - skip it
+        //Divide Matrix on 3x3 blocks
+        int ln, cl, line, column;
+        int aline = 0;
+        int acolumn = 0;
+          int whatLine=0;
+   int whatColumn=0;
+        for (ln = 0; ln < size; ln++) {
+            for (cl = 0; cl < size; cl++) {
+ 
+                // Scan lines
+                for (line = 0; line < size; line++) {
+                    for (int value = 1; value <= size * size; value++) {
+                        for (column = 0; column < size; column++) {
+                            aline = (ln * size) + line;
+                            acolumn = (cl * size) + column;
+                        whatLine = -1;
+                            if (cells[aline][acolumn].value != 0)  // We should skip the cells where the value is already set
+                                                      continue;
+                        
+                            if (cells[aline][acolumn].possibleValues[value-1] != 0) {//if PossibleValue exists
+                                // check if the value appears in the line cells only once
+                            //    System.out.println("PossVal: " + cells[aline][acolumn].possibleValues[value - 1]+" L: "+aline+" C: "+acolumn);
+                                if (whatLine == -1) { // put the flag
+                                    whatLine = aline;
+                                    whatColumn = acolumn;
+                                } else { 
+                                    // Value appears the second time - skip it
                                     whatLine = -1;
                                     break; // out from loop
                                 }
                             }
                         }
                         if (whatLine == -1) {
+                            // if break : Nothing to do
                         } else {
-                            if (SetValue(whatLine, whatColumn, value) < 0) {// Set value into the cell
-                                return -1;
-                            }
+                            // Value appears only once in cell [line][column]
+                            SetValue(whatLine, whatColumn, value);
+                            //       System.out.println("Line: " + line + " whatColumn: " + whatColumn + " value: " + value);
                             ret++;
                         }
                     }
                 }
             }
         }
+        if (ret != 0) {
+            DisplayPoss("After Solve3");
+        }
+        System.out.println();
+        System.out.println(" Solve3 returns " + ret);
         return ret;
     }
 
@@ -388,141 +413,20 @@ class Matrix {
      * Function is searching for cells in lines, columns & quadrants which have
      * two NumberOfPossVal & delegate its value to FindRegion()
      */
-    int Solve4() {
-        //System.out.println();
-        //System.out.print("Solve4 starts");
-        int line;
-        int column;
-        int ret = 0;
-
-        // printf("Function Solve4\n");
-        // Try to find pairs. For every cell with 2 possible values scan
-        // line, column and quad
-        for (line = 0; line < size * size; ++line) {
-            for (column = 0; column < size * size; ++column) {
-                if (cells[line][column].NumberOfPossVal == 2) {
-
-                    // Scan the line
-                    ret += FindRegion(line, column, line, 0, line + 1, size * size);
-
-                    // Scan the column
-                    ret += FindRegion(line, column, 0, column, size * size, column + 1);
-
-                    // Scan the quad
-                    int top, left, bottom, right;
-                    top = line - (line % size);
-                    left = column - (column % size);
-                    bottom = top + size;
-                    right = left + size;
-                    ret += FindRegion(line, column, top, left, bottom, right);
-                }
-            }
-        }
-        /*
-         * System.out.println(); System.out.println(" Solve4 returns " + ret);
-         */
-        return ret;
-    }
-//***************************************************************
-  /*
-     * Function is searching for cells with two same possibleValues & calls
-     * FixThePair()
-     */
-
-    int FindRegion(int line, int column, int top, int left, int bottom, int right) {
-        int ret = 0;
-
-        // Scan the region and try to find a cell with the same poss values
-        int li, cl, ii;
-        for (li = top; li < bottom; li++) {
-            for (cl = left; cl < right; ++cl) {
-                // If the cell is the same cell or it has more than 2 posvals
-                // - skip it
-                if ((li == line && cl == column)
-                        || cells[li][cl].value != 0
-                        || cells[li][cl].NumberOfPossVal != 2) {
-                    continue;
-                }
-
-                // Does the cell have the same posvals?
-                boolean theSame = true;
-                for (ii = 0; ii < size * size; ii++) {
-                    if ((cells[li][cl].possibleValues[ii])
-                            != (cells[line][column].possibleValues[ii])) {
-                        theSame = false;
-                        break;
-                    }
-                }
-
-                if (!theSame) {
-                    continue;
-                }
-
-                // We found a pair
-                ret += FixThePair(line, column, li, cl, top, left, bottom, right);
-            }
-        }
-
-        return ret;
-    }
-//************************************************************************************
-  /*
-     * This function scans the region (top,left:bottom,right) and is looking for
-     * cells where number of possible values is greater than 2 and it has
-     * possible values from cell (line,column) removes those possible values
-     * from this cell
-     */
-
-    int FixThePair(int line, int column, int li, int cl,
-            int top, int left, int bottom, int right) {
-        int ll, cc;
-        int ret = 0;
-        int ii;
-
-        for (ll = top; ll < bottom; ++ll) {
-            for (cc = left; cc < right; ++cc) {
-
-                // We should skip the cells where the value is already set
-                if (cells[ll][cc].value > 0) {
-                    continue;
-                }
-
-                // We should also skip two cells: (line,column) and (li, cl)
-                if ((li == ll && cl == cc)
-                        || (ll == line && cc == column)) {
-                    continue;
-                }
-
-                // If this cell has one of the pair values - remove it
-                for (ii = 0; ii < size * size; ++ii) {
-                    if (cells[line][column].possibleValues[ii] == 0) {
-                        continue;
-                    }
-                    if (UpdatePossValuesForCell(ll, cc, ii + 1) != 0) {
-                        // printf("Line=%d, col=%d, Value %d removed from pos.val. of cell (%d,%d)\n",
-                        //       line, column, ii+1, ll, cc);
-                        ret++;
-                    }
-                }
-            }
-        }
-
-        return ret;
-    }
-
     int SolveAll() {
         int line, column;
         int n;
         int ret = 0;
-        while ((n = Solve()) != 0
-                || (n = Solve1()) != 0
-                || (n = Solve2()) != 0
-                || (n = Solve3()) != 0
-                || (n = Solve4()) != 0) {
+        while (//(n = Solve()) != 0)
+               // (n = Solve1()) != 0 ||
+                //(n = Solve2()) != 0 )
+                (n = Solve3()) != 0) //|| (n = Solve4()) != 0) 
+        {
             if (n < 0) {
                 return -1;
             }
         }
+        System.out.println("Starts SolveAll");
         for (line = 0; line < size * size; ++line) {
             for (column = 0; column < size * size; ++column) {
                 // We should skip the cells where the value is already set
