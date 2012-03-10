@@ -1,4 +1,4 @@
-//Sudoku13
+//Solve3 has problem
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
