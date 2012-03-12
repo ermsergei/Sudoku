@@ -1,4 +1,4 @@
-//Solve3 has problem
+//Solve3 has problem, when it works itself
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
