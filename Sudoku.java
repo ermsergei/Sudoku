@@ -1,3 +1,4 @@
+// Test GITHUB
 //Solve3 has problem, when it works itself
 import java.io.FileNotFoundException;
 import java.io.FileReader;
